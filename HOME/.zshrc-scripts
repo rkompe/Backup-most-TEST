@@ -1,0 +1,29 @@
+autoload U colors && colors
+
+cpath=`pwd`
+
+date=`date +%y%m%d-%H:%M:%S`
+tmp=$HOME/.tmp/$task.$DEVICE.$date.tmp
+log=$HOME/.tmp/$task.$DEVICE.$date.log
+errcountlog=$HOME/.tmp/$task.errcount
+dev=termux
+
+irrelevant_err_warn=( -e "Ignoring --track-renames" -e _warning -e dir_warning -e "File was deleted" -e "Beobachtung"  -e "Begutachtung" -e "Beachtung"  -e "ZodError" -e "error.js" )
+
+source $HOME/.zshrc-ohne-ohmyzsh >& /dev/null
+
+source $HOME/MyScripts.shared/lib/utils.sh
+if [[ "$DEVICE" == "$DEVICES[u]" ]] ; then
+        source $HOME/MyScripts.Ubuntu/lib/ubuntu-utils.sh
+        dev=$DEVICE
+fi
+if [[ "$DEVICE" != "$DEVICES[w]" ]] ; then
+        source $HOME/MyScripts.termux/lib/libTermuxApi.sh
+else
+        dev=$DEVICE
+fi
+
+source $HOME/MyScripts.$dev/lib/dev-specific.sh
+source $HOME/MyScripts.shared/lib/time_utils.sh
+
+cd $cpath

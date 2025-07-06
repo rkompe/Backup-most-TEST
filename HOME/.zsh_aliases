@@ -1,0 +1,332 @@
+
+
+## temporaer bis rclone bisync etabliert:
+## (trotzdem hier als Beispiele stehen lassen und fuer Notfall)
+# rclone sync spiegelt die Quelle zum Ziel, d.h. es werden Dateien im Ziel geloescht,
+# die nicht in der Quelle vorhanden sind.
+# rclone copy kopiert ohne zu loesch, uerberschreibt aber auch neuere Version am Ziel. (s.u.)
+# Die folgenden mit --exclude "*,v" weil die nicht von einem Geraet aufs andere aber
+# mittels rclone-sync.sh in die pCloud kopiert werden sollen
+#alias rsut='rclone-bisync.sh sync -nodryrun -b2 $rclone_Tablet:/storage/B669-E78B/zz-rclone-Backup/rsot /data_home_disk/01_Fuer_Incr_Backup_am_PC $rclone_Tablet:/storage/B669-E78B/01_Fuer_Incr_Backup_am_PC  --exclude "*,v"  '
+#alias rsut-t='rclone-bisync.sh sync -nodryrun -b2 /storage/B669-E78B/zz-rclone-Backup/rsot $rclone_Ubuntu:/data_home_disk/01_Fuer_Incr_Backup_am_PC /storage/B669-E78B/01_Fuer_Incr_Backup_am_PC  --exclude "*,v"  '
+#alias rsud-d='rclone-bisync.sh sync -nodryrun -b2 /storage/emulated/0/18_Backup_rclone.tmp/DeskTablet/o_d  $rclone_Ubuntu:/data_home_disk/01_Fuer_Incr_Backup_am_PC /storage/emulated/0/01_Fuer_Incr_Backup_am_PC  --exclude "*,v"  '
+#alias rsuh='rclone-bisync.sh sync -nodryrun -b2 $rclone_Handy:/storage/emulated/0/zz-rclone-Backup/rsoh  /data_home_disk/01_Fuer_Incr_Backup_am_PC ${rclone_Handy}:/storage/emulated/0/01_Fuer_Incr_Backup_am_PC  --exclude "*,v" '
+#alias rsuh2222='rclone-bisync.sh sync -nodryrun -b2 $rclone_Handy:/storage/emulated/0/zz-rclone-Backup/rsoh  /data_home_disk/01_Fuer_Incr_Backup_am_PC ${rclone_Handy}2222:0/01_Fuer_Incr_Backup_am_PC  --exclude "*,v" '
+#alias rsuo='rclone-bisync.sh sync -nodryrun -b2 ${rclone_Oukitel}:/storage/emulated/0/18_Backup_rclone.tmp/Oukitel/u_o /data_home_disk/01_Fuer_Incr_Backup_am_PC ${rclone_Oukitel}:/storage/75D7-DC5F/01_Fuer_Incr_Backup_am_PC --exclude "*,v" '
+#alias rsuo-o='rclone-bisync.sh sync -nodryrun -b2 OukitelLokal2222:0/18_Backup_rclone.tmp/Oukitel/u_o $rclone_Ubuntu:/data_home_disk/01_Fuer_Incr_Backup_am_PC OukitelLokal2222:sdcard/01_Fuer_Incr_Backup_am_PC --exclude "*,v" '
+#alias rsuo2222='rclone-bisync.sh sync -nodryrun -b2 ${rclone_Oukitel}2222:0/18_Backup_rclone.tmp/Oukitel/u_o /data_home_disk/01_Fuer_Incr_Backup_am_PC ${rclone_Oukitel}2222:sdcard/01_Fuer_Incr_Backup_am_PC --exclude "*,v" '
+################
+
+#######################################################
+##### In dieser Datei nur Funktionen definieren, die im Terminal verwendet werden.
+##### Funktionen, die von Skripten verwendet werden z.B. in MyScripts.shared/lib/utils.sh definieren
+######################################################
+
+#------------
+ml () { cat_last_errfile.sh $1 | more }
+tl () { cat_last_errfile.sh $1 | tail -100 }
+hl () { cat_last_errfile.sh $1 | head -10 }
+wl () { cat_last_errfile.sh $1 | wc }
+qcl () { cat_last_errfile.sh $1 | grep -e  "Queue copy" | more}
+cl () { cat_last_errfile.sh $1 | grep -e Copied | more }
+el () { check-for-err-rclone-output.sh ` get_last_errfile.sh $1 ` }
+sl () { summarize-rclone-output.sh ` get_last_errfile.sh $1 ` }
+wcl () { cl $1 | wc }
+wqcl () { qcl $1 | wc }
+
+alias ta="tail -50 $HOME/.tmp/start-termux-apis.log"
+alias ts='tail -30 $HOME/.tmp/check-sms-*`date +%y%m%d`*.log'
+alias tb='tail -30 $HOME/.tmp/check-battery*`date +%y%m%d`*.log'
+alias ltmp='(cd $HOME ; ls -lrt .tmp/*{err,log,stdout}*| tail -30)'
+alias lstdout='(cd $HOME ; ls -lrt .tmp/*stdout | tail -5)'
+alias lerr='(cd $HOME ; ls -lrt .tmp/*err | tail -10)'
+alias llog='(cd $HOME ; ls -lrt .tmp/*log* | tail -10)'
+
+alias err=check-for-err-rclone-output.sh
+alias ep="check-for-err-rclone-output.sh $HOME/.tmp/rcsync-alles-p.stdout"
+alias tp="tail -20 $HOME/.tmp/rcsync-alles-p.stdout"
+alias hp="tail -30 $HOME/.tmp/rcsync-alles-p.stdout"
+alias sp="summarize-rclone-output.sh $HOME/.tmp/rcsync-alles-p.stdout"
+
+alias mbl="more $$LOG_TMP_DIR/battery.log"
+alias tbl="tail -50 $LOG_TMP_DIR/battery.log"
+alias rbl="tail -50 $LOG_TMP_DIR/log_recent.battery_status"
+alias mtl="more $tmp_device_log"
+alias ttl="tail -40 $tmp_device_log"
+alias mdl="more $DEVICE_LOG"
+alias hdl="head -20 $DEVICE_LOG"
+
+#------------
+
+rmtilde ()
+{
+    rm -f *~
+    rm -f .??*~
+    rm -f MyScripts.*/*~
+    rm -f MyScripts.*/*/*~
+    rm -f Backup_Tasks.*/*~
+    rm -f MyScripts.*/.*~
+    rm -f MyScripts.*/*/.*~
+    rm -f Backup_Tasks.*/.*~
+}
+
+latest18 ()
+{
+        local n_head=20
+        local cpath=`pwd`
+        test $# -gt 0 && { n_head=$1 ; shift }
+
+        cd $BASE_DIRS[$iDEVICES[$DEVICE],18]/..
+
+        list-latest-files.sh -type-dir -max 4 -n 1000 $1 `basename $BASE_DIRS[$iDEVICES[$DEVICE],18] ` |grep "/25" | head -$n_head
+        cd $cpath
+}
+
+
+clean_up_18 ()
+{
+        if [[ "$1" != "-h" || "$#" == "0" ]]; then
+                echo eine Jahreszahl zweistellig als Argument
+                echo ... oder YYMM
+                return 0
+        fi
+        if [[ "$DEVICE" != "$DEVICES[u]" ]]; then
+                echo nur auf "$DEVICES[u]" erlaubt
+                return 0
+        fi
+        jahr=$1  # 2 Ziffern
+        rm -rf /home/ralf/data_home_disk/18_Backup_rclone.tmp/*/*/*/${jahr}*
+}
+
+clean_up_Save_pCloud ()
+{
+        if [[ "$1" != "-h" || "$#" == "0" ]]; then
+                echo eine Jahreszahl zweistellig als Argument
+                return 0
+        fi
+        if [[ "$DEVICE" != "$DEVICES[u]" ]]; then
+                echo nur auf "$DEVICES[u]" erlaubt
+                return 0
+        fi
+        jahr=$1  # 2 Ziffern
+        rm -rf /home/ralf/data_home_disk/Save-pCloud/*/*/*/Backup/${jahr}*
+}
+
+mount_mine ()
+{
+        mount > $HOME/.tmp/mounted$$
+        # gawk ist notwendig, sonst kommt die Fehlermeldung "zsh: unknown sort specifier"
+        local RESULT=`grep -e ralf -e SATA_intern -e data_home_disk $HOME/.tmp/mounted$$ |gawk '{printf("%s\n", $3)}'`
+        echo $RESULT
+        rm $HOME/.tmp/mounted$$
+
+}
+
+
+grepinpunktfiles()
+{
+    local p=$PWD
+    cd $HOME
+    grep -i --exclude="*~" --exclude="*swp" --exclude="*history" --exclude=".viminfo"   \
+           --exclude=".histfile" --exclude="*compdum*" --exclude="*zshrc.pre*"   $* .????*
+    cd $p
+}
+
+grepsh()
+{
+    local p=$PWD
+    cd $HOME
+    grep "$*" MyScripts.*/*sh MyScripts.*/*lib/*sh
+    cd $p
+}
+
+q ()
+{
+        declare -i n
+        local o=""
+        local n=$#
+        while test $n -gt 0 ; do
+                case $1 in
+                        -* )
+                                o="$o $1"
+                                shift;;
+                        * )
+                          n=0
+                esac
+                n=$n-1
+        done
+        local d="$*"
+        if test $d ; then
+                echo foo > /dev/null
+        else
+                d="."
+        fi
+        local opt=(${=o})
+        local dirs=(${=d})
+        for d in $dirs ; do
+                chmod a-x $d/*~ $d/.*~ >/dev/null
+        done
+        echo ls $opt $dirs
+        ls $opt $dirs
+}
+alias qq="q -l "
+
+lsf ()
+{
+        find $1 -type f -exec ls -l '{}' \;
+}
+
+rsyncmy ()
+{
+	rsync -uav ralf@$IP_PC:$1/$2 $3
+}
+
+rclone_cp_max-age ()
+{
+        # Aufruf: rclone_cp_max-age source_path dest_path time(e.g., 2h, 5m) [d]
+        # Es werden nur Dateien kopiert, die sich von schon vorhandener Kopie im Ziel unterscheiden.
+        # D.h. auch: wurde dieselbe Datei im Ziel geaendert, wird sie ueberschrieben, auch wenn
+        # sie neuer ist !!!! Also Achtung !!!!
+        local dryrun=""
+        if [[ "$4" = "d" ]]; then
+                dryrun="--dry-run"
+        fi
+        rclone copy $1 $2 --max-age $3 -v --exclude "*~" --exclude "*swp" --exclude "*,v" $dryrun |& grep -v directory
+}
+
+manmy()
+{
+    man $1 | batcat -l man -p
+}
+
+# Beim Aufruf noch die Zeit (z.B. 2h, 10m) und optional "d" fuer dry/run angeben
+alias rclone_cp_o_u="rclone_cp_max-age OukitelH:/storage/75D7-DC5F/01_Fuer_Incr_Backup_am_PC 01_Fuer_Incr_Backup_am_PC"
+alias rclone_cp_h_u="rclone_cp_max-age HandyH:/storage/emulated/0/01_Fuer_Incr_Backup_am_PC 01_Fuer_Incr_Backup_am_PC"
+alias rclone_cp_t_u="rclone_cp_max-age TabletH:/storage/B669-E78B/01_Fuer_Incr_Backup_am_PC 01_Fuer_Incr_Backup_am_PC"
+alias rclone_cp_d_u="rclone_cp_max-age 01_Fuer_Incr_Backup_am_PC $rclone_Ubuntu:/data_home_disk/01_Fuer_Incr_Backup_am_PC"
+
+
+compute_filter_md5 ()
+{
+         md5=`md5sum $HOME/.rclone_bisync_filter | gawk '{print $1}'`
+         echo -n $md5 > $HOME/.rclone_bisync_filter.md5
+         md5=`md5sum $HOME/.rclone_bisync_filter_HOME | gawk '{print $1}'`
+         echo -n $md5 > $HOME/.rclone_bisync_filter_HOME.md5
+}
+
+clear_zshrc_tmp ()
+{
+        echo "" > $HOME/.zshrc-tmp
+}
+
+cimy ()
+{
+	rcs -l $@
+	ci -l $@
+	chmod ug+w RCS/* RCS/.???*
+}
+# folgendes verarbeitet auch .*~
+# alias cipunktfiles='cimy .bash_aliases  .exclude* .vimrc .lastrun*  .local_bashrc*  .shell_common_rc .bashrc .zshrc .zshrc-ohne-ohmyzsh .zshrc-scripts .rclone*'
+cipunktfiles ()
+{
+        ## files=` echo .bash_aliases  .exclude* .vimrc .lastrun*  .local_bashrc*  .shell_common_rc .bashrc .zshrc .zshrc-ohne-ohmyzsh .zshrc-scripts .rclone_bisync_filter  | sed -e "s/ \.[_0-9a-zA-Z\.\-]*~ / /g"  `
+        ## b=(${=files})
+        rcs -l $PunktFiles
+        ci -l $PunktFiles
+	chmod ug+w RCS/* RCS/.???*
+}
+
+ci_all ()
+{
+        cimy MyScripts.*/*sh
+        cimy MyScripts.*/*lib/*sh
+        rm -f Backup_Tasks.*/*~
+        cimy Backup_Tasks.*/*
+        cipunktfiles
+        chmod u+x Backup_Tasks*/* MyScripts*/*sh
+}
+
+rcs_new_revision ()
+{
+        # must be a string without blank
+        local string=$1
+
+        cd
+
+        ci_all
+
+        rcs -s$string MyScripts.*/*sh
+        rcs -s$string MyScripts.*/*/*sh
+        rcs -s$string Backup_Tasks.*/*
+        rcs -s$string RCS/*,v
+}
+
+rsyncprotokoll ()
+{
+        grep -v -f $HOME/.exclude_from_rsync $1 |more
+}
+
+alias black_on_white=" export standard_fg_color=black ; export standard_bg_color=white "
+alias white_on_black=" export standard_fg_color=white ; export standard_bg_color=black "
+
+alias taillog="tail $DEVICE_LOG"
+alias tailbackuphist="tail $BACKUP_LOG"
+
+date_for_logging()
+{
+        # Aufruf: date_for_logging [-min <min>]
+        # -min:  vom aktuellen Datum werden min Minuten abgezogen
+        typeset -i min
+        typeset -i dat
+
+        if [[ "$1" == "-min" ]] ; then
+                min=$2
+                dat=$(date +%s)
+                dat=$(($dat - (60 * $min)))
+                datum=$(date -d "@$dat" "+%y/%m/%d %H:%M")
+                # echo min=$min  dat=$dat datum=$datum
+                echo $datum
+        else
+                date "+%y/%m/%d %H:%M"
+        fi
+}
+
+
+add_to_log__ ()
+{
+        # Aufruf: add_to_log__ [-min <min>]
+        # -min:  vom aktuellen Datum werden min Minuten abgezogen
+
+        local tmp=$HOME/.tmp/add_to_log.tmp
+        # { echo -n "` date `    " ; cat  } > $tmp
+        if [[ "$1" == "tee" ]] ; then
+                tee  $tmp
+        else
+                $1  > $tmp
+        fi
+        shift
+        ## cat $DEVICE_LOG >> $tmp
+        ## mv $tmp $DEVICE_LOG
+        echo "`date_for_logging $*` `cat $tmp`" >> $tmp_device_log
+}
+
+add_to_log ()
+{
+        add_to_log__ cat $*
+}
+
+add_to_log_tee ()
+{
+        add_to_log__ tee $*
+}
+
+
+if test -x "`which nvim`" ; then
+    if [[ "$TERMUX_SESSION"  != "" ]]; then
+        alias vi="TERM=xterm-256color nvim"
+    else
+        alias vi=nvim
+    fi
+elif test -x "`which vim`" ; then
+	alias vi=vim
+fi

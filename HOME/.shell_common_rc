@@ -1,0 +1,126 @@
+
+
+#export IDESYSTEM=$HOME/system
+#export TERMINFO=$IDESYSTEM/etc/terminfo
+export TEMP=$HOME/tmp
+export TMPDIR=$TEMP
+#export ODEX_FOLDER=$TEMP
+export SHELL=$IDESYSTEM/bin/bash
+#export MC_DATADIR=$IDESYSTEM/etc/mc
+#export VIMRUNTIME=$IDESYSTEM/etc/vim
+export EDITOR=vim
+## dieses muss in .local_bashrc-* gesetzt werden
+export PATH=".:$HOME/.local/bin:$HOME/bin:$PATH:/opt/nvim-linux-x86_64/bin"
+export BASH_FUNCLIB_PATH="$HOME/MyScripts.shared/lib"
+export data_home_disk="/home/ralf/data_home_disk"
+export TERMUX_SHARED_PATH="$data_home_disk/Rsync-Termux/Home/"
+
+# feste IP-Adressen fuer den Router
+export IP_PCr="192.168.1.161"
+export IP_HANDYr="192.168.1.90"
+export IP_OUKITELr="192.168.1.92"
+export IP_DESKTABLETr="192.168.1.222"
+export IP_TABLETr="192.168.1.164"
+
+source $HOME/.netzenv
+if [  "$NETZenv" = "" ] ; then
+        echo -e "\n**** ACHTUNG: keine bekannte  Netzwerk Umgebung gefunden *****\n"
+else
+        echo "Netzwerk Umgebung:  $NETZenv"
+fi
+
+# Bei Verbindung ueber WLAN (und USB?) macht es keinen Unterschied, ob
+# bei rclone *U: oder *H: genommen wird. Z.B. sind
+# rclone lsd TabletH:
+# rclone lsd TabletU:
+# gleich im Ergebnis, obwohl im rclone.conf der "pass =" Eintrag unterschiedlich ist.
+# Allerdings funktioniert bei Verbindung ueber Router TabletH: und TabletU: nicht.
+# Daher wird in den Skripten nicht geraetweise unterschieden, ob USB oder Banane33
+case  $NETZenv in
+        Banane33 )
+                # das wird auch so gesetzt, wenn Banane33 aus und Tenda im AP an
+                export rclone_Oukitel=OukitelH
+                export rclone_Tablet=TabletH
+                export rclone_Ubuntu=UbuntuH
+                export rclone_Handy=HandyH
+                export rclone_DeskTablet=DeskTabletH
+                export rclone_WinDebian=WinDebianH
+        ;;
+        USB )
+                export rclone_Oukitel=OukitelU
+                export rclone_Tablet=TabletU
+                export rclone_Ubuntu=UbuntuU
+                export rclone_Handy=HandyU
+                export rclone_DeskTablet=DeskTabletU
+                export rclone_WinDebian=WinDebianU
+        ;;
+        Router )
+                export rclone_Oukitel=Oukitel
+                export rclone_Tablet=Tablet
+                export rclone_Ubuntu=Ubuntu
+                export rclone_Handy=Handy
+                export rclone_DeskTablet=DeskTablet
+                export rclone_WinDebian=WinDebian
+        ;;
+esac
+
+export rclone_GDrive=GDrive
+export rclone_pCloud=pCloud
+export rclone_Tablet_UL=Tablet_UL
+export rclone_DeskTablet_UL=DeskTablet_UL
+
+echo rclone service names:  $rclone_Oukitel  $rclone_Tablet $rclone_Ubuntu $rclone_Handy $rclone_DeskTablet $rclone_WinDebian
+
+echo -e "IP Adressen gesetzt als \n\
+      IP_PC $IP_PC \n\
+      IP_HANDY $IP_HANDY \n\
+      IP_OUKITEL $IP_OUKITEL \n\
+      IP_DESKTABLET $IP_DESKTABLET \n\
+      IP_TABLET $IP_TABLET "
+
+
+export IP_TABLET_UL=$IP_TABLET
+export IP_DESKTABLET_UL=$IP_DESKTABLET
+export Termux_User=u0_a426
+
+export SSH_PORT_UBUNTU=2221
+export SSH_PORT_WINDOWS=4441
+export SSH_PORT_TERMUX=8822
+export SSH_PORT_SSH_APP=8821
+
+export sshtablet="ssh -p $SSH_PORT_TERMUX  u0_a426@$IP_TABLET"
+export sshdesktablet="ssh -p $SSH_PORT_TERMUX u0_a426@$IP_DESKTABLET"
+export sshtabletul="ssh -p $SSH_PORT_WINDOWS userland@$IP_TABLET_UL"
+export sshhandy="ssh -p $SSH_PORT_TERMUX u0_a426@$IP_HANDY"
+export sshoukitel="ssh -p $SSH_PORT_TERMUX u0_a426@$IP_OUKITEL"
+export sshubuntu="ssh -p $SSH_PORT_UBUNTU ralf@$IP_PC"
+export sshwindebian="ssh -p $SSH_PORT_WINDOWS ralf@$IP_PC"
+
+
+alias sshwindebian="$sshwindebian"
+alias sshubuntu="$sshubuntu"
+alias sshhandy="$sshhandy"
+alias sshoukitel="$sshoukitel"
+alias sshtablet="$sshtablet"
+alias sshdesktablet="$sshdesktablet"
+alias sshtabletul="$sshtabletul"
+alias sshlocalandroid="ssh -p $SSH_PORT_TERMUX 127.0.0.1"
+
+
+export exclude_from="$HOME/.exclude_from_backup"
+
+export alt_BACKUP_WARNING_FILE=__RSYNC_BACKUP_DIR__W_A_R_N_I_N_G__
+export BACKUP_WARNING_FILE=$alt_BACKUP_WARNING_FILE$alt_BACKUP_WARNING_FILE$alt_BACKUP_WARNING_FILE
+
+
+# Alias definitions.
+# You may want to put all your additions into a separate file like
+# ~/.bash_aliases, instead of adding them here directly.
+if [ -f $HOME/.bash_aliases ]; then
+    . $HOME/.bash_aliases
+fi
+
+source $HOME/.chmod_scripts >& /dev/null
+
+touch $HOME/.zshrc-tmp
+source $HOME/.zshrc-tmp

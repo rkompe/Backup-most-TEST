@@ -1,0 +1,318 @@
+
+
+##############################################################################
+#----- My Own ----############################################################
+##############################################################################
+cd
+
+# das als erstes
+source $HOME/.shell_common_rc
+
+set -o GLOB_SUBST
+
+autoload U colors && colors
+
+export standard_fg_color=red
+export standard_bg_color=black
+bold=$(tput bold)
+reset=$(tput sgr0)
+
+
+# #############################################################
+# Hauptsaechlich fuer {backup,retrieve}-punktfiles-scripts.sh
+# #############################################################
+declare -a dirs=(Save MyScripts.UL MyScripts.Ubuntu HowTo-Linux MyScripts.shared MyScripts.termux MyScripts.WinDebian Backup_Tasks.Handy Backup_Tasks.Oukitel Backup_Tasks.Tablet Backup_Tasks.termux Backup_Tasks.WinDebian Backup_Tasks.DeskTablet Backup_Tasks.Ubuntu )
+##### Hier ggf weitere Punkt-Dateien eintragen  ######
+touch $HOME/.fooooo~
+rm $HOME/.*~
+declare -a PunktFiles=( .bash_logout  .zlogout .zsh_aliases .determine_device_name .chmod_scripts .rclone_bisync_filter .rclone_bisync_filter_HOME .termux .last* .shell* .zshrc .zshrc-ohne-ohmyzsh  .zshrc-scripts .bashrc .bash_aliases .vimrc .exclude_* .ssh .local_* )
+# #############################################################
+
+# ############
+# folgendes ist nur ein Notbehelf !!!, denn bei einem anschliesenden retrieve-punk*sh entsteht
+# u.U. ein Konflikt: Dateien in Quelle UND Ziel neuer als .last_backup*
+alias rsync-ps-h-dry='rsync --dry-run -uav --exclude-from=$HOME/.exclude_from_backup --exclude="*,v" $dirs $PunktFiles $HOME/Handy---mnt | grep -v -e "/$"'
+alias rsync-ps-h='rsync -uav --exclude-from=$HOME/.exclude_from_backup --exclude="*,v" $dirs $PunktFiles $HOME/Handy---mnt | grep -v -e "/$"'
+alias rsync-ps-d-dry='rsync --dry-run -uav --exclude-from=$HOME/.exclude_from_backup --exclude="*,v" $dirs $PunktFiles $HOME/DeskTablet---mnt | grep -v -e "/$"'
+alias rsync-ps-d='rsync  -uav --exclude-from=$HOME/.exclude_from_backup --exclude="*,v" $dirs $PunktFiles $HOME/DeskTablet---mnt | grep -v -e "/$"'
+alias rsync-ps-t-dry='rsync --dry-run -uav --exclude-from=$HOME/.exclude_from_backup --exclude="*,v" $dirs $PunktFiles $HOME/Tablet---mnt | grep -v -e "/$"'
+alias rsync-ps-t='rsync  -uav --exclude-from=$HOME/.exclude_from_backup --exclude="*,v" $dirs $PunktFiles $HOME/Tablet---mnt | grep -v -e "/$"'
+alias rsync-ps-o-dry='rsync --dry-run -uav --exclude-from=$HOME/.exclude_from_backup --exclude="*,v" $dirs $PunktFiles $HOME/Oukitel---mnt | grep -v -e "/$"'
+alias rsync-ps-o='rsync  -uav --exclude-from=$HOME/.exclude_from_backup --exclude="*,v" $dirs $PunktFiles $HOME/Oukitel---mnt | grep -v -e "/$"'
+alias rsync-ps-from-o-dry='(cd $HOME/Oukitel---mnt ; rsync --dry-run -uav --exclude-from=$HOME/.exclude_from_backup --exclude="*,v" $dirs $PunktFiles $HOME | grep -v -e "/$")'
+alias rsync-ps-from-o='(cd $HOME/Oukitel---mnt ; rsync  -uav --exclude-from=$HOME/.exclude_from_backup --exclude="*,v" $dirs $PunktFiles $HOME | grep -v -e "/$")'
+##############
+
+# du schoen formatiert und fett
+dus ()
+{
+        (
+        for d in $* ; do
+                echo " $bold " `du -s -x -h $d `
+        done
+        ) \
+                | sed -e "s/\([ 0-9][0-9]\)\([MKG]\)/\1,0\2/" \
+                | sed -e "s/\([KMG]\)/ \1/" \
+                | gawk '{printf("%s  %8s%2s\t", $1, $2 , $3)}{$1="";$2="";$3=""}{printf("%s\n",$0)}'
+}
+
+bindkey -v
+
+setopt correct
+export SPROMPT="Correct $bold $fg[magenta] $bg[black] %R $reset $fg[$standard_fg_color] $bg[$standard_bg_color] to $bold $fg[magenta] $bg[black] %r $reset $fg[$standard_fg_color] $bg[$standard_bg_color]? [yes, no, abort, edit] "
+
+
+## prompt bigfade
+## export PS1="%B%F{blue}█▓▒░%B%F{white}%K{blue}%n@%m%b%k%f%F{blue}%K{black}░▒▓█%b%f%k%F{blue}%K{black}█▓▒░%B%F{white}%K{black} %D{%a %b %d} %D{%I:%M:%S%P}
+## %{%}%B%F{yellow}%K{black}%d>%b%f%k "
+## prompt fade
+## export PS1="%F{green}%B%K{green}█▓▒░%F{white}%K{green}%B%n@%m%b%F{green}%K{black}█▓▒░%F{white}%K{black}%B %D{%a %b %d} %D{%I:%M:%S%P}
+## %{%}%F{green}%K{black}%B%~/%b%k%f "
+## prompt fire
+## export PS1=%B%F{yellow}%K{yellow}%{█▓▒░%}%B%F{white}%K{yellow}%n@%m%b%F{red}%K{yellow}%{░▒▓█%}%b%F{red}%K{black}%{█▓▒░%}%B%F{white}%K{black} %D{%a %b %d} %D{%I:%M:%S%P}
+## %{%}%B%F{yellow}%K{black}%~/%b%f%k "
+## prompt oliver
+## export PS1="%B%F{default}%n %m:%~%$((COLUMNS-12))(l.
+## %{%}. )[%h%1(j.%%%j.)%0(?..:%?)]%# %b%f%k"
+
+ALL_DEV_KUERZELs_ohne_pc="o d t h "
+typeset -a ALL_DEV_KUERZELa_ohne_pc=(`echo $ALL_DEV_KUERZELs_ohne_pc `)
+ALL_DEV_KUERZELs=" $ALL_DEV_KUERZELs_ohne_pc u w"  # u vor w !
+typeset -a ALL_DEV_KUERZELa=(`echo $ALL_DEV_KUERZELs `)
+typeset -A ip_var_names=( o IP_OUKITEL h IP_HANDY t IP_TABLET pc IP_PC u IP_PC w IP_PC d IP_DESKTABLET tul IP_TABLET dul IP_DESKTABLET )
+typeset -A DEVICES=( pc PC o Oukitel h Handy t Tablet u Ubuntu p pCloud g GDrive d DeskTablet w WinDebian tul Tablet_UL dul DeskTablet_UL )
+echo DEVICES: ${(kv)DEVICES}
+typeset -A rclone_devices=( o $rclone_Oukitel h $rclone_Handy t $rclone_Tablet u $rclone_Ubuntu p $rclone_pCloud g $rclone_GDrive d $rclone_DeskTablet w $rclone_WinDebian tul $rclone_Tablet_UL dul $rclone_DeskTablet_UL )
+typeset -A ip_devices=( o $IP_OUKITEL h $IP_HANDY t $IP_TABLET pc $IP_PC u $IP_PC d $IP_DESKTABLET w $IP_PC tul $IP_TABLET dul $IP_DESKTABLET )
+typeset -A iDEVICES
+for key in "${(@k)DEVICES}"; do
+        iDEVICES[$DEVICES[$key]]=$key
+done
+##echo iDEVICES: ${(kv)iDEVICES}
+
+
+emulated_0=/storage/emulated/0
+export tablet_sdcard=/storage/9C33-6BBD
+export desktablet_sdcard=/storage/B669-E78B
+export oukitel_sdcard=/storage/75D7-DC5F
+export handy_sdcard=$emulated_0
+export ubuntu_base=/data_home_disk
+export windows_base=""
+export windebian_base="/mnt/d"
+export gdrive_base=""
+export pcloud_base=MAIN
+
+export path_linux_home_backup=01_Fuer_Incr_Backup_am_PC/MeineDokumente/Dokumente/Linux
+
+typeset -A BASE_DIRS
+
+BASE_DIRS[t,1]=$emulated_0/01_Fuer_Incr_Backup_am_PC
+BASE_DIRS[t,2]=$emulated_0/02_A-Documents
+BASE_DIRS[t,3]=$emulated_0/03_Channelings
+BASE_DIRS[t,9]=$emulated_0/09_Alles_andere_in_Cloud
+BASE_DIRS[t,11]=$tablet_sdcard/11_MeineMusik
+BASE_DIRS[t,15]=$tablet_sdcard/15_Windows_Benutzer
+BASE_DIRS[t,16]=$tablet_sdcard/16_Sonja
+BASE_DIRS[t,17]=/storage/emulated/0/17_Nicht-in-Cloud-OHNE-FLAC
+BASE_DIRS[t,18]=$emulated_0/18_Backup_rclone.tmp
+BASE_DIRS[t,19]=$emulated_0/19_Temp
+BASE_DIRS[t,s]=$emulated_0/Save-pCloud
+BASE_DIRS[t,t]=$emulated_0/Temp-extern/TestRcloneBisync
+BASE_DIRS[t,h]=$emulated_0/$path_linux_home_backup
+BASE_DIRS[t,RDLb]=$emulated_0/Rsync-Direkt-Linux_Backup
+
+BASE_DIRS[u,1]=$ubuntu_base/01_Fuer_Incr_Backup_am_PC
+BASE_DIRS[u,2]=$ubuntu_base/02_A-Documents
+BASE_DIRS[u,3]=$ubuntu_base/03_Channelings
+BASE_DIRS[u,9]=$ubuntu_base/09_Alles_andere_in_Cloud
+BASE_DIRS[u,11]=$ubuntu_base/11_MeineMusik
+BASE_DIRS[u,15]=$ubuntu_base/15_Windows_Benutzer
+BASE_DIRS[u,16]=$ubuntu_base/16_Sonja
+BASE_DIRS[u,17]=$ubuntu_base/17_Nicht-in-Cloud-OHNE-FLAC
+BASE_DIRS[u,18]=$ubuntu_base/18_Backup_rclone.tmp
+BASE_DIRS[u,19]=$ubuntu_base/19_Temp
+BASE_DIRS[u,s]=$ubuntu_base/Save-pCloud
+BASE_DIRS[u,t]=$ubuntu_base/TestRcloneBisync
+BASE_DIRS[u,h]=$ubuntu_base/$path_linux_home_backup
+BASE_DIRS[u,RDLb]=$ubuntu_base/Rsync-Direkt-Linux/MainCloud-Rsync/Backup
+
+
+BASE_DIRS[w,1]=$windebian_base/01_Fuer_Incr_Backup_am_PC
+BASE_DIRS[w,2]=$windebian_base/02_A-Documents
+BASE_DIRS[w,3]=$windebian_base/03_Channelings
+BASE_DIRS[w,9]=$windebian_base/09_Alles_andere_in_Cloud
+BASE_DIRS[w,15]=$windebian_base/Windows_Benutzer
+BASE_DIRS[w,16]=$windebian_base/16_Sonja
+BASE_DIRS[w,17]=$windebian_base/17_Nicht-in-Cloud-OHNE-FLAC
+BASE_DIRS[w,18]=$windebian_base/18_Backup_rclone.tmp
+BASE_DIRS[w,19]=$windebian_base/19_Temp
+BASE_DIRS[w,s]=$windebian_base/Save-pCloud
+BASE_DIRS[w,t]=$windebian_base/TestRcloneBisync
+BASE_DIRS[w,h]=$windebian_base/$path_linux_home_backup
+
+BASE_DIRS[wi,1]=$windows_base/01_Fuer_Incr_Backup_am_PC
+BASE_DIRS[wi,2]=$windows_base/02_A-Documents
+BASE_DIRS[wi,3]=$windows_base/03_Channelings
+BASE_DIRS[wi,9]=$windows_base/09_Alles_andere_in_Cloud
+BASE_DIRS[wi,15]=$windows_base/Windows_Benutzer
+BASE_DIRS[wi,16]=$windows_base/16_Sonja
+BASE_DIRS[wi,17]=$windows_base/17_Nicht-in-Cloud-OHNE-FLAC
+BASE_DIRS[wi,18]=$windows_base/18_Backup_rclone.tmp
+BASE_DIRS[wi,19]=$windows_base/19_Temp
+BASE_DIRS[wi,s]=$windows_base/Save-pCloud
+BASE_DIRS[wi,t]=$windows_base/TestRcloneBisync
+BASE_DIRS[wi,h]=$windows_base/$path_linux_home_backup
+
+BASE_DIRS[p,1]=$pcloud_base/01_Fuer_Incr_Backup_am_PC
+BASE_DIRS[p,2]=$pcloud_base/02_A-Documents
+BASE_DIRS[p,3]=$pcloud_base/03_Channelings
+BASE_DIRS[p,9]=$pcloud_base/09_Alles_andere_in_Cloud
+BASE_DIRS[p,11]=$pcloud_base/11_MeineMusik
+BASE_DIRS[p,15]=15_Windows_Benutzer
+BASE_DIRS[p,16]=$pcloud_base/16_Sonja
+BASE_DIRS[p,18]=18_Backup_rclone.tmp
+BASE_DIRS[p,19]=$pcloud_base/19_Temp
+BASE_DIRS[p,s]=Save-pCloud
+BASE_DIRS[p,t]=TestRcloneBisync
+BASE_DIRS[p,RDLb]=Rsync-Direkt-Linux_Backup
+
+BASE_DIRS[g,2]=$gdrive_base/02_A-Documents
+BASE_DIRS[g,18]=$gdrive_base/18_Backup_rclone.tmp
+BASE_DIRS[g,19]=$gdrive_base/19_Temp/Fuer-Sync-mit-GDrive
+
+BASE_DIRS[o,1]=$oukitel_sdcard/01_Fuer_Incr_Backup_am_PC
+BASE_DIRS[o,2]=$oukitel_sdcard/02_A-Documents
+BASE_DIRS[o,3]=$oukitel_sdcard/03_Channelings
+BASE_DIRS[o,9]=$oukitel_sdcard/09_Alles_andere_in_Cloud
+BASE_DIRS[o,11]=$oukitel_sdcard/11_MeineMusik/
+BASE_DIRS[o,15]=/storage/emulated/0/15_Windows_Benutzer
+BASE_DIRS[o,16]=/storage/emulated/0/16_Sonja
+BASE_DIRS[o,17]=/storage/emulated/0/17_Nicht-in-Cloud-OHNE-FLAC
+BASE_DIRS[o,18]=/storage/emulated/0/18_Backup_rclone.tmp
+BASE_DIRS[o,19]=$oukitel_sdcard/19_Temp
+BASE_DIRS[o,s]=/storage/emulated/0/Save-pCloud
+BASE_DIRS[o,t]=$oukitel_sdcard/Temp2-extern/TestRcloneBisync
+BASE_DIRS[o,h]=$oukitel_sdcard/$path_linux_home_backup
+BASE_DIRS[o,RDLb]=/storage/emulated/0/Rsync-Direkt-Linux_Backup
+
+
+BASE_DIRS[h,1]=$handy_sdcard/01_Fuer_Incr_Backup_am_PC
+BASE_DIRS[h,2]=$handy_sdcard/02_A-Documents
+BASE_DIRS[h,3]=$handy_sdcard/03_Channelings
+BASE_DIRS[h,9]=$handy_sdcard/09_Alles_andere_in_Cloud
+BASE_DIRS[h,17]=/storage/emulated/0/17_Nicht-in-Cloud-OHNE-FLAC
+BASE_DIRS[h,18]=$handy_sdcard/18_Backup_rclone.tmp
+BASE_DIRS[h,19]=$handy_sdcard/19_Temp
+BASE_DIRS[h,s]=$handy_sdcard/Save-pCloud/
+BASE_DIRS[h,h]=$handy_sdcard/$path_linux_home_backup
+
+BASE_DIRS[d,1]=/storage/emulated/0/01_Fuer_Incr_Backup_am_PC
+BASE_DIRS[d,2]=/storage/emulated/0/02_A-Documents
+BASE_DIRS[d,3]=$desktablet_sdcard/03_Channelings
+BASE_DIRS[d,9]=$desktablet_sdcard/09_Alles_andere_in_Cloud
+BASE_DIRS[d,16]=$desktablet_sdcard/16_Sonja
+BASE_DIRS[d,17]=/storage/emulated/0/17_Nicht-in-Cloud-OHNE-FLAC
+BASE_DIRS[d,18]=/storage/emulated/0/18_Backup_rclone.tmp
+BASE_DIRS[d,19]=/storage/emulated/0/19_Temp
+BASE_DIRS[d,11]=$desktablet_sdcard/11_MeineMusik
+BASE_DIRS[d,s]=$emulated_0/Save-pCloud
+BASE_DIRS[d,RDLb]=/storage/emulated/0/Rsync-Direkt-Linux_Backup
+BASE_DIRS[d,t]=$desktablet_sdcard/Temp-extern/TestRclone
+BASE_DIRS[d,h]=/storage/emulated/0/$path_linux_home_backup
+
+#
+
+export pcloud_base=MAIN
+export pcloud_18=MAIN/18_Backup_rclone.tmp
+
+source .determine_device_name
+
+if [ -f  $HOME/.local_bashrc-$DEVICE ]; then
+    .   $HOME/.local_bashrc-$DEVICE
+fi
+
+
+case "$DEVICE" in
+$DEVICES[o] )
+	export PS1="%B%F{red}█▓▒░%B%F{blue}%K{red} $USERNAME %b%k%f%F{blue}%K{red}░▒▓█%b%f%k%F{red} $DEVICE %K{red}█▓▒░%B%F{blue}%K{red} %D{%a %b %d} %D{%I:%M:%S%P}
+%B%F{yellow}%K{blue}%d [%h] >%b%f%k "
+	;;
+$DEVICES[h] )
+	export PS1="%B%F{red}█▓▒░%B%F{green}%K{red} $USERNAME %b%k%f%F{red}%K{green}░▒▓█%b%f%k%F{red} $DEVICE %K{red}█▓▒░%B%F{green}%K{red} %D{%a %b %d} %D{%I:%M:%S%P}
+%B%F{yellow}%K{blue}%d [%h] >%b%f%k "
+	;;
+$DEVICES[d] )
+	export PS1="%B%F{green}█▓▒░%B%F{red}%K{green} $USERNAME %b%k%f%F{red}%K{green}░▒▓█%b%f%k%F{red} $DEVICE %K{green}█▓▒░%B%F{red}%K{green} %D{%a %b %d} %D{%I:%M:%S%P}
+%B%F{yellow}%K{blue}%d [%h] >%b%f%k "
+	;;
+$DEVICES[tul]  | $DEVICES[dul] )
+	export PS1="%B%F{red}█▓▒░%B%F{white}%K{red} $USERNAME %b%k%f%F{red}%K{black}░▒▓█%b%f%k%F{green} $DEVICE %K{black}█▓▒░%B%F{white}%K{black} %D{%a %b %d} %D{%I:%M:%S%P}
+%B%F{green}%K{black}%d [%h] >%b%f%k "
+	;;
+$DEVICES[t] )
+	export PS1="%B%F{red}█▓▒░%B%F{white}%K{red} $USERNAME %b%k%f%F{red}%K{black}░▒▓█%b%f%k%F{red} $DEVICE %K{black}█▓▒░%B%F{white}%K{black} %D{%a %b %d} %D{%I:%M:%S%P}
+%B%F{yellow}%K{black}%d [%h] >%b%f%k "
+	;;
+$DEVICES[u] | $DEVICES[w] )
+	case $GDMSESSION in
+	ubuntu )
+		case $USER in
+			ralf )
+				export PS1="%B%F{blue}█▓▒░%B%F{white}%K{blue} $USERNAME %b%k%f%F{blue}%K{black}░▒▓█%b%f%k%F{blue} $DEVICE %K{black}█▓▒░%B%F{white}%K{black} %D{%a %b %d} %D{%I:%M:%S%P}
+%B%F{yellow}%K{black}%d [%h] >%b%f%k "
+
+				### echo -e "\n                                          *****   $bg[red]      $bg[blue]$fg[green] ftp_stop manuell starten $bg[red]      $fg[black]$bg[white]       *****\n"
+				### echo -e "\n                                          *****   $bg[red]      $bg[black]$fg[yellow] protonVPN manuell starten $bg[red]      $fg[black]$bg[white]       *****\n"
+				;;
+			ralfsamba )
+				export PS1="%B%F{blue}█▓▒░%B%F{red}%K{blue} $USERNAME %b%k%f%F{blue}%K{red}░▒▓█%b%f%k%F{red} $DEVICE %K{blue}█▓▒░%B%F{red}%K{blue} %D{%a %b %d} %D{%I:%M:%S%P}
+%B%F{yellow}%K{black}%d [%h] >%b%f%k "
+				;;
+			test )
+				prompt fire
+				;;
+		esac
+	   ;;
+   	*)
+		case $USER in
+			ralf )
+				export PS1="%B%F{blue}█▓▒░%B%F{white}%K{blue} $USERNAME %b%k%f%F{blue}%K{black}░▒▓█%b%f%k%F{blue} $DEVICE %K{black}█▓▒░%B%F{white}%K{blue} %D{%a %b %d} %D{%I:%M:%S%P}
+%B%F{yellow}%K{blue}%d [%h] >%b%f%k "
+
+				;;
+			ralfsamba )
+				export PS1="%B%F{blue}█▓▒░%B%F{red}%K{blue} $USERNAME %b%k%f%F{blue}%K{red}░▒▓█%b%f%k%F{red} $DEVICE %K{blue}█▓▒░%B%F{red}%K{blue} %D{%a %b %d} %D{%I:%M:%S%P}
+%B%F{yellow}%K{black}%d [%h] >%b%f%k "
+				;;
+			test )
+				prompt fire
+				;;
+		esac
+		;;
+
+	esac
+esac
+
+if [[ "$TERMUX_VERSION" != "" ]] ; then
+    export LOG_TMP_DIR="/storage/emulated/0/tmp"
+    echo  "LOG_TMP_DIR=$LOG_TMP_DIR"
+else
+    export LOG_TMP_DIR="$HOME/.tmp"
+    echo  "LOG_TMP_DIR=$LOG_TMP_DIR"
+fi
+export BACKUP_LOG=$BASE_DIRS[$iDEVICES[$DEVICE],1]/BACKUP.HISTORY.txt
+export DEVICE_LOG=$BASE_DIRS[$iDEVICES[$DEVICE],1]/$DEVICE.log
+export NOTIFICATION_FILE=$LOG_TMP_DIR/NOTIFICATION.txt
+export ALARM_FILE=$LOG_TMP_DIR/ALARM.txt
+# von Automate geschrieben - status Aenderung wird erst nach etlichen Minuten sichtbar
+export log_recent_status=$LOG_TMP_DIR/log_recent.battery_status
+# von examine_battery_status() in termux geschrieben
+export script_log_recent_status=$LOG_TMP_DIR/log_recent.battery_status.by_script
+export tmp_device_log=$LOG_TMP_DIR/device.log
+
+# muss hier am Ende bleiben, weil sonst nicht alle Variablen gesetzt
+# bash_aliases vor zsh_aliases!
+source $HOME/.bash_aliases
+source $HOME/.zsh_aliases
+# Jump to the HOME folder
+cd $STARTFOLDER
