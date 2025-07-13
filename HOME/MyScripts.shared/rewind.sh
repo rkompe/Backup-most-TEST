@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/usr/bin/zsh
 
 # Rewind backup snapshot to a previous date.
 # Usage: rewind.sh DATE [SUBDIR]
@@ -16,8 +16,7 @@ target_date="$1"
 subdir="${2:-}"
 
 : "${ziel:?Environment variable 'ziel' must be set to current snapshot root}"
-: "${backupdir:?Environment variable 'backupdir' must be set to backup directory
-}"
+: "${backupdir:?Environment variable 'backupdir' must be set to backup directory }"
 
 # Destination directory for the rewound snapshot
 restore_dir="${RESTORE_DIR:-${ziel}_rewind_${target_date}}"
@@ -28,8 +27,7 @@ if [[ -d "$restore_dir" ]]; then
 fi
 
 # Find list files
-file_list=$(ls "$backupdir"/files_*"$target_date"* 2>/dev/null | sort | tail -n1
-)
+file_list=$(ls "$backupdir"/files_*"$target_date"* 2>/dev/null | sort | tail -n1 )
 dir_list=$(ls "$backupdir"/dirs_*"$target_date"* 2>/dev/null | sort | tail -n1)
 
 if [[ ! -f "$file_list" || ! -f "$dir_list" ]]; then
